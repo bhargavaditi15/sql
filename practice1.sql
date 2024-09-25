@@ -101,3 +101,92 @@ WHERE Products.category = 'Electronics';
 SELECT product_name, quantity_sold * unit_price AS total_price 
 FROM Sales 
 JOIN Products ON Sales.product_id = Products.product_id;
+
+-- 1. Calculate the total revenue generated from sales for each product category.
+select p.category, SUM(s.total_price) AS total_revenue
+FROM Sales s
+JOIN Products p ON s.product_id = p.product_id
+GROUP BY p.category;
+
+-- 2. Find the product category with the highest average unit price.
+select category from products
+group by category
+order by avg(unit_price) desc
+limit 1;
+
+-- 3. Identify products with total sales exceeding 30.
+select p.product_name
+FROM Sales s
+JOIN Products p ON s.product_id = p.product_id
+GROUP BY p.product_name
+HAVING SUM(s.total_price) > 30;
+
+-- 4. Count the number of sales made in each month.
+select DATE_FORMAT(s.sale_date, '%Y-%m') AS month, COUNT(*) AS sales_count
+FROM Sales s
+GROUP BY month;
+
+-- 5. Determine the average quantity sold for products with a unit price greater than $100.
+SELECT AVG(s.quantity_sold) AS average_quantity_sold
+FROM Sales s
+JOIN Products p ON s.product_id = p.product_id
+WHERE p.unit_price > 100;
+
+-- 6. Retrieve the product name and total sales revenue for each product.
+select p.product_name, sum(s.total_price) as total_revenue
+from sales s 
+join products p on s.product_id = p.product_id
+group by p.product_name;
+
+-- 7. List all sales along with the corresponding product names.
+select s.sale_id, p.product_name
+from sales s 
+join products p on s.product_id = p.product_id;
+
+-- 8. Retrieve the product name and total sales revenue for each product.
+
+-- 9. Rank products based on total sales revenue.
+SELECT p.product_name, SUM(s.total_price) AS total_revenue,
+       RANK() OVER (ORDER BY SUM(s.total_price) DESC) AS revenue_rank
+FROM Sales s
+JOIN Products p ON s.product_id = p.product_id
+GROUP BY p.product_name;
+
+-- 10. Calculate the running total revenue for each product category.
+SELECT p.category, p.product_name, s.sale_date, 
+       SUM(s.total_price) OVER (PARTITION BY p.category ORDER BY s.sale_date) AS running_total_revenue
+FROM Sales s
+JOIN Products p ON s.product_id = p.product_id;
+
+-- 11. Categorize sales as “High”, “Medium”, or “Low” based on total price (e.g., > $200 is High, $100-$200 is Medium, < $100 is Low).
+SELECT sale_id, 
+       CASE 
+           WHEN total_price > 200 THEN 'High'
+           WHEN total_price BETWEEN 100 AND 200 THEN 'Medium'
+           ELSE 'Low'
+       END AS sales_category
+FROM Sales;
+
+-- 12. Identify sales where the quantity sold is greater than the average quantity sold.
+SELECT *
+FROM Sales
+WHERE quantity_sold > (SELECT AVG(quantity_sold) FROM Sales);
+
+-- 13. Extract the month and year from the sale date and count the number of sales for each month
+SELECT CONCAT(YEAR(sale_date), '-', LPAD(MONTH(sale_date), 2, '0')) AS month,
+       COUNT(*) AS sales_count
+FROM Sales
+GROUP BY YEAR(sale_date), MONTH(sale_date);
+
+-- 14. Calculate the number of days between the current date and the sale date for each sale.
+SELECT sale_id, DATEDIFF(NOW(), sale_date) AS days_since_sale
+FROM Sales;
+
+-- 15. Identify sales made during weekdays versus weekends.
+select sale_id,
+       case 
+           when DAYOFWEEK(sale_date) IN (1, 7) THEN 'Weekend'
+           else 'Weekday'
+       END AS day_type
+FROM Sales;
+
